@@ -1,0 +1,60 @@
+name: Terraform CI
+
+on:
+  pull_request:
+    paths:
+      - "day3/04-ci/**"
+      - ".github/workflows/terraform.yml"
+
+defaults:
+  run:
+    working-directory: day3/04-ci
+
+env:
+  AWS_ACCESS_KEY_ID: test
+  AWS_SECRET_ACCESS_KEY: test
+  AWS_REGION: us-east-1
+  AWS_ENDPOINT_URL: http://localhost:4566
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    services:
+      floci:
+        image: hectorvent/floci:latest
+        ports:
+          - 4566:4566
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10"
+
+      - uses: terraform-linters/setup-tflint@v4
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive -diff
+
+      - name: terraform init
+        run: terraform init -input=false
+
+      - name: terraform validate
+        run: terraform validate
+
+      - name: tflint
+        run: |
+          tflint --init
+          tflint --format compact
+
+      - name: checkov
+        run: |
+          pip install checkov
+          # Checks skipped because they don't apply to a single-region emulator workshop
+          checkov -d . --framework terraform --compact \
+            --skip-check CKV_AWS_18,CKV_AWS_144,CKV_AWS_145,CKV2_AWS_61,CKV2_AWS_62
+
+      - name: terraform plan
+        run: terraform plan -input=false -no-color
