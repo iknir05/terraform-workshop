@@ -1,4 +1,4 @@
-# STEP 1: a database password that must never appear in logs.
+# A database password that must never appear in logs.
 variable "db_password" {
   description = "Password for the orders database"
   type        = string
@@ -14,10 +14,3 @@ resource "aws_ssm_parameter" "db_password" {
     Project = "ShopFast"
   }
 }
-
-# STEP 2: uncomment this block (try it without "sensitive = true" first and read the error)
-# output "db_password" {
-#   value     = aws_ssm_parameter.db_password.value
-#   sensitive = true
-# }
-# END STEP 2
